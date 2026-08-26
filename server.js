@@ -1,50 +1,105 @@
 const express = require("express");
 const Database = require("better-sqlite3");
+const session = require("express-session");
+const bcrypt = require("bcryptjs");
 const path = require("path");
 
+
+// ========================================
+// Basic settings
+// ========================================
+
 const app = express();
+
 const PORT = 3000;
 
-app.use(express.json());
 
-
-// ======================================
-// SQLite DB
-// ======================================
+// ========================================
+// Connect SQLite DB
+// ========================================
 
 const db = new Database("likes.db");
 
 
-// ======================================
+// ========================================
+// Middleware
+// ========================================
+
+app.use(express.json());
+
+
+// Session 설정
+app.use(
+    session({
+
+        secret: "my-secret-key",
+
+        resave: false,
+
+        saveUninitialized: false,
+
+        cookie: {
+
+            httpOnly: true,
+
+            maxAge: 1000 * 60 * 60
+
+        }
+
+    })
+);
+
+
+// public/HTML
+
+app.use(
+    express.static(
+        path.join(__dirname, "public")
+    )
+);
+
+
+// ========================================
 // users table
-// ======================================
+// ========================================
 
 db.prepare(`
     CREATE TABLE IF NOT EXISTS users (
+
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL
+
+        name TEXT NOT NULL,
+
+        username TEXT UNIQUE NOT NULL,
+
+        password TEXT NOT NULL
+
     )
 `).run();
 
 
-// ======================================
+// ========================================
 // posts table
-// ======================================
+// ========================================
 
 db.prepare(`
     CREATE TABLE IF NOT EXISTS posts (
+
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+
         title TEXT NOT NULL
+
     )
 `).run();
 
 
-// ======================================
+// ========================================
 // likes table
-// ======================================
+// ========================================
 
 db.prepare(`
     CREATE TABLE IF NOT EXISTS likes (
+
         id INTEGER PRIMARY KEY AUTOINCREMENT,
 
         user_id INTEGER NOT NULL,
@@ -58,122 +113,333 @@ db.prepare(`
 
         FOREIGN KEY(post_id)
             REFERENCES posts(id)
+
     )
 `).run();
 
 
-// ======================================
-// Create test users
-// ======================================
-
-const userCount = db
-    .prepare("SELECT COUNT(*) AS count FROM users")
-    .get();
-
-if (userCount.count === 0) {
-
-    db.prepare(`
-        INSERT INTO users (name)
-        VALUES (?)
-    `).run("Tom");
-
-    db.prepare(`
-        INSERT INTO users (name)
-        VALUES (?)
-    `).run("Jane");
-
-    db.prepare(`
-        INSERT INTO users (name)
-        VALUES (?)
-    `).run("Michael");
-}
-
-
-// ======================================
+// ========================================
 // Create test post
-// ======================================
+// ========================================
 
 const postCount = db
-    .prepare("SELECT COUNT(*) AS count FROM posts")
+    .prepare(`
+        SELECT COUNT(*) AS count
+        FROM posts
+    `)
     .get();
+
 
 if (postCount.count === 0) {
 
     db.prepare(`
         INSERT INTO posts (title)
         VALUES (?)
-    `).run("I like Pizza");
+    `)
+    .run("맛있는 피자");
+
 }
 
 
-// ======================================
-// HTML 
-// ======================================
+// ========================================
+// Sign up
+// ========================================
 
-app.use(
-    express.static(
-        path.join(__dirname, "public")
-    )
-);
+app.post(
+    "/api/register",
+    (req, res) => {
+
+        const {
+            name,
+            username,
+            password
+        } = req.body;
 
 
-// ======================================
-// User list
-// ======================================
+        // Confirm values
 
-app.get("/api/users", (req, res) => {
+        if (
+            !name ||
+            !username ||
+            !password
+        ) {
 
-    const users = db
-        .prepare(`
-            SELECT id, name
-            FROM users
-            ORDER BY id
+            return res.status(400).json({
+
+                message:
+                    "이름, 아이디, 비밀번호를 모두 입력하세요."
+
+            });
+
+        }
+
+
+        // Check for duplicate username
+
+        const existingUser =
+            db.prepare(`
+                SELECT id
+                FROM users
+                WHERE username = ?
+            `)
+            .get(username);
+
+
+        if (existingUser) {
+
+            return res.status(400).json({
+
+                message:
+                    "이미 사용 중인 아이디입니다."
+
+            });
+
+        }
+
+
+        // Encrypt password
+
+        const hashedPassword =
+            bcrypt.hashSync(
+                password,
+                10
+            );
+
+
+        // Save to DB
+
+        db.prepare(`
+            INSERT INTO users
+            (
+                name,
+                username,
+                password
+            )
+
+            VALUES (?, ?, ?)
         `)
-        .all();
-
-    res.json(users);
-});
-
-
-// ======================================
-// Login
-// ======================================
-
-app.post("/api/login", (req, res) => {
-
-    const userId = Number(req.body.userId);
-
-    const user = db
-        .prepare(`
-            SELECT id, name
-            FROM users
-            WHERE id = ?
-        `)
-        .get(userId);
+        .run(
+            name,
+            username,
+            hashedPassword
+        );
 
 
-    if (!user) {
+        res.json({
 
-        return res.status(404).json({
-            message: "User not found."
+            message:
+                "Confirm signup."
+
         });
 
     }
+);
 
 
-    // Use Session or JWT in a real application for authentication and authorization.
+// ========================================
+// Login
+// ========================================
 
-    res.json({
-        userId: user.id,
-        name: user.name
-    });
+app.post(
+    "/api/login",
+    (req, res) => {
 
-});
+        const {
+            username,
+            password
+        } = req.body;
 
 
-// ======================================
-// Number of likes and whether the user has liked the post
-// ======================================
+        // Confirm values
+
+        if (
+            !username ||
+            !password
+        ) {
+
+            return res.status(400).json({
+
+                message:
+                    "아이디와 비밀번호를 입력하세요."
+
+            });
+
+        }
+
+
+        // Search for user
+
+        const user =
+            db.prepare(`
+                SELECT
+                    id,
+                    name,
+                    username,
+                    password
+
+                FROM users
+
+                WHERE username = ?
+            `)
+            .get(username);
+
+
+        if (!user) {
+
+            return res.status(401).json({
+
+                message:
+                    "Wrong username or password."
+
+            });
+
+        }
+
+
+        // Check password
+
+        const passwordOK =
+            bcrypt.compareSync(
+                password,
+                user.password
+            );
+
+
+        if (!passwordOK) {
+
+            return res.status(401).json({
+
+                message:
+                    "Wrong username or password."
+
+            });
+
+        }
+
+
+        // =================================
+        // Login successful
+        //
+        // Save user ID to Session
+        // =================================
+
+        req.session.userId =
+            user.id;
+
+
+        res.json({
+
+            id: user.id,
+
+            name: user.name,
+
+            username: user.username
+
+        });
+
+    }
+);
+
+
+// ========================================
+// Current logged-in user verification
+// ========================================
+
+app.get(
+    "/api/me",
+    (req, res) => {
+
+        // Session verification
+
+        if (!req.session.userId) {
+
+            return res.status(401).json({
+
+                message:
+                    "Login is required."
+
+            });
+
+        }
+
+
+        // Serach DB by Session의 userId
+
+        const user =
+            db.prepare(`
+                SELECT
+                    id,
+                    name,
+                    username
+
+                FROM users
+
+                WHERE id = ?
+            `)
+            .get(
+                req.session.userId
+            );
+
+
+        if (!user) {
+
+            return res.status(401).json({
+
+                message:
+                    "User not found."
+
+            });
+
+        }
+
+
+        res.json(user);
+
+    }
+);
+
+
+// ========================================
+// Logout
+// ========================================
+
+app.post(
+    "/api/logout",
+    (req, res) => {
+
+        req.session.destroy(
+            (error) => {
+
+                if (error) {
+
+                    return res.status(500)
+                        .json({
+
+                            message:
+                                "Logout failed."
+
+                        });
+
+                }
+
+
+                res.json({
+
+                    message:
+                        "Logged out successfully."
+
+                });
+
+            }
+        );
+
+    }
+);
+
+
+// ========================================
+// Get post info
+// ========================================
 
 app.get(
     "/api/posts/:postId",
@@ -182,15 +448,17 @@ app.get(
         const postId =
             Number(req.params.postId);
 
-        const userId =
-            Number(req.query.userId);
 
+        // Search for post
 
-        // 게시물
-        const post = db
-            .prepare(`
-                SELECT id, title
+        const post =
+            db.prepare(`
+                SELECT
+                    id,
+                    title
+
                 FROM posts
+
                 WHERE id = ?
             `)
             .get(postId);
@@ -199,31 +467,62 @@ app.get(
         if (!post) {
 
             return res.status(404).json({
-                message: "Post not found."
+
+                message:
+                    "Post not found."
+
             });
 
         }
 
 
-        // 전체 좋아요 개수
-        const count = db
-            .prepare(`
-                SELECT COUNT(*) AS count
+        // Total like count
+
+        const count =
+            db.prepare(`
+                SELECT
+                    COUNT(*) AS count
+
                 FROM likes
+
                 WHERE post_id = ?
             `)
             .get(postId);
 
 
-        // if user press like button
-        const userLike = db
-            .prepare(`
-                SELECT id
-                FROM likes
-                WHERE user_id = ?
-                AND post_id = ?
-            `)
-            .get(userId, postId);
+        // Current logged-in user
+
+        const userId =
+            req.session.userId;
+
+
+        let liked = false;
+
+
+        // If logged in
+        // Check if the user has liked the post
+
+        if (userId) {
+
+            const like =
+                db.prepare(`
+                    SELECT id
+
+                    FROM likes
+
+                    WHERE user_id = ?
+
+                    AND post_id = ?
+                `)
+                .get(
+                    userId,
+                    postId
+                );
+
+
+            liked = !!like;
+
+        }
 
 
         res.json({
@@ -232,9 +531,10 @@ app.get(
 
             title: post.title,
 
-            likeCount: count.count,
+            likeCount:
+                count.count,
 
-            liked: !!userLike
+            liked: liked
 
         });
 
@@ -242,33 +542,86 @@ app.get(
 );
 
 
-// ======================================
-// Like
-// ======================================
+// ========================================
+// Like post
+// ========================================
 
 app.post(
     "/api/posts/:postId/like",
     (req, res) => {
 
+        // =================================
+        // Check user in Session
+        // =================================
+
+        const userId =
+            req.session.userId;
+
+
+        if (!userId) {
+
+            return res.status(401).json({
+
+                message:
+                    "Like post requires login."
+
+            });
+
+        }
+
+
         const postId =
             Number(req.params.postId);
 
-        const userId =
-            Number(req.body.userId);
 
+        // Check if post exists
+
+        const post =
+            db.prepare(`
+                SELECT id
+
+                FROM posts
+
+                WHERE id = ?
+            `)
+            .get(postId);
+
+
+        if (!post) {
+
+            return res.status(404).json({
+
+                message:
+                    "Post not found."
+
+            });
+
+        }
+
+
+        // Save like
 
         try {
 
             db.prepare(`
                 INSERT INTO likes
-                (user_id, post_id)
+                (
+                    user_id,
+                    post_id
+                )
 
                 VALUES (?, ?)
-            `).run(userId, postId);
+            `)
+            .run(
+                userId,
+                postId
+            );
 
         }
 
         catch (error) {
+
+            // if the user has already liked the post, return an error
 
             if (
                 error.code ===
@@ -276,20 +629,29 @@ app.post(
             ) {
 
                 return res.status(400).json({
+
                     message:
                         "You have already liked this post."
+
                 });
 
             }
 
+
             throw error;
+
         }
 
 
-        const count = db
-            .prepare(`
-                SELECT COUNT(*) AS count
+        // Calculate like count again
+
+        const count =
+            db.prepare(`
+                SELECT
+                    COUNT(*) AS count
+
                 FROM likes
+
                 WHERE post_id = ?
             `)
             .get(postId);
@@ -299,7 +661,8 @@ app.post(
 
             liked: true,
 
-            likeCount: count.count
+            likeCount:
+                count.count
 
         });
 
@@ -307,20 +670,37 @@ app.post(
 );
 
 
-// ======================================
+// ========================================
 // Like and Cancel
-// ======================================
+// ========================================
 
 app.delete(
     "/api/posts/:postId/like",
     (req, res) => {
 
+        // Check user in Session
+
+        const userId =
+            req.session.userId;
+
+
+        if (!userId) {
+
+            return res.status(401).json({
+
+                message:
+                    "좋아요를 취소하려면 로그인해야 합니다."
+
+            });
+
+        }
+
+
         const postId =
             Number(req.params.postId);
 
-        const userId =
-            Number(req.body.userId);
 
+        // Delete like in DB
 
         db.prepare(`
             DELETE FROM likes
@@ -328,13 +708,22 @@ app.delete(
             WHERE user_id = ?
 
             AND post_id = ?
-        `).run(userId, postId);
+        `)
+        .run(
+            userId,
+            postId
+        );
 
 
-        const count = db
-            .prepare(`
-                SELECT COUNT(*) AS count
+        // Calculate like count again
+
+        const count =
+            db.prepare(`
+                SELECT
+                    COUNT(*) AS count
+
                 FROM likes
+
                 WHERE post_id = ?
             `)
             .get(postId);
@@ -344,7 +733,8 @@ app.delete(
 
             liked: false,
 
-            likeCount: count.count
+            likeCount:
+                count.count
 
         });
 
@@ -352,14 +742,17 @@ app.delete(
 );
 
 
-// ======================================
-// Run server
-// ======================================
+// ========================================
+// Server execution
+// ========================================
 
-app.listen(PORT, () => {
+app.listen(
+    PORT,
+    () => {
 
-    console.log(
-        `Server running at http://localhost:${PORT}`
-    );
+        console.log(
+            `Server running at http://localhost:${PORT}`
+        );
 
-});
+    }
+);
