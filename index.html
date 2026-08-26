@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <title>REST API 좋아요</title>
+
+</head>
+
+<body>
+
+<h1>REST API 좋아요 테스트</h1>
+
+
+<!-- ==========================
+     로그인
+=========================== -->
+
+<h3>사용자 로그인</h3>
+
+<select id="userSelect">
+
+    <option value="1">
+        홍길동
+    </option>
+
+    <option value="2">
+        김철수
+    </option>
+
+    <option value="3">
+        이영희
+    </option>
+
+</select>
+
+
+<button id="loginButton">
+    로그인
+</button>
+
+
+<p>
+
+현재 사용자:
+
+<strong id="currentUser">
+로그인하지 않음
+</strong>
+
+</p>
+
+
+<hr>
+
+
+<!-- ==========================
+     게시물
+=========================== -->
+
+<h2>맛있는 피자 🍕</h2>
+
+
+<button id="likeButton" disabled>
+
+    👍 좋아요
+
+</button>
+
+
+<span>
+
+좋아요
+
+<strong id="likeCount">
+0
+</strong>
+
+</span>
+
+
+<script>
+
+
+// 현재 로그인한 사용자
+
+let currentUserId = null;
+
+
+// 현재 사용자가 좋아요했는지
+
+let liked = false;
+
+
+// 게시물 ID
+
+const postId = 1;
+
+
+// =====================================
+// 로그인
+// =====================================
+
+async function login() {
+
+    const userId =
+        Number(
+            document.getElementById(
+                "userSelect"
+            ).value
+        );
+
+
+    const response =
+        await fetch(
+            "/api/login",
+            {
+
+                method: "POST",
+
+                headers: {
+                    "Content-Type":
+                        "application/json"
+                },
+
+                body: JSON.stringify({
+                    userId: userId
+                })
+
+            }
+        );
+
+
+    const data =
+        await response.json();
+
+
+    currentUserId =
+        data.userId;
+
+
+    document.getElementById(
+        "currentUser"
+    ).textContent =
+        data.name;
+
+
+    document.getElementById(
+        "likeButton"
+    ).disabled = false;
+
+
+    // 로그인한 사용자의
+    // 좋아요 상태 확인
+
+    loadPost();
+
+}
+
+
+// =====================================
+// 게시물 정보 가져오기
+// =====================================
+
+async function loadPost() {
+
+    const response =
+        await fetch(
+            `/api/posts/${postId}?userId=${currentUserId}`
+        );
+
+
+    const data =
+        await response.json();
+
+
+    liked =
+        data.liked;
+
+
+    document.getElementById(
+        "likeCount"
+    ).textContent =
+        data.likeCount;
+
+
+    updateButton();
+
+}
+
+
+// =====================================
+// 좋아요 버튼
+// =====================================
+
+async function toggleLike() {
+
+    if (!currentUserId) {
+
+        alert("먼저 로그인하세요.");
+
+        return;
+
+    }
+
+
+    let response;
+
+
+    // 좋아요 취소
+    if (liked) {
+
+        response =
+            await fetch(
+                `/api/posts/${postId}/like`,
+                {
+
+                    method: "DELETE",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body: JSON.stringify({
+
+                        userId:
+                            currentUserId
+
+                    })
+
+                }
+            );
+
+    }
+
+
+    // 좋아요
+    else {
+
+        response =
+            await fetch(
+                `/api/posts/${postId}/like`,
+                {
+
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body: JSON.stringify({
+
+                        userId:
+                            currentUserId
+
+                    })
+
+                }
+            );
+
+    }
+
+
+    const data =
+        await response.json();
+
+
+    if (!response.ok) {
+
+        alert(data.message);
+
+        return;
+
+    }
+
+
+    liked =
+        data.liked;
+
+
+    document.getElementById(
+        "likeCount"
+    ).textContent =
+        data.likeCount;
+
+
+    updateButton();
+
+}
+
+
+// =====================================
+// 버튼 글자 변경
+// =====================================
+
+function updateButton() {
+
+    const button =
+        document.getElementById(
+            "likeButton"
+        );
+
+
+    if (liked) {
+
+        button.textContent =
+            "❤️ 좋아요 취소";
+
+    }
+
+    else {
+
+        button.textContent =
+            "👍 좋아요";
+
+    }
+
+}
+
+
+// =====================================
+// 이벤트
+// =====================================
+
+document.getElementById(
+    "loginButton"
+).addEventListener(
+    "click",
+    login
+);
+
+
+document.getElementById(
+    "likeButton"
+).addEventListener(
+    "click",
+    toggleLike
+);
+
+</script>
+
+</body>
+
+</html>
