@@ -1,133 +1,345 @@
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
 
 <head>
 
     <meta charset="UTF-8">
 
-    <title>REST API project1</title>
+    <title>
+        REST API Like Test
+    </title>
+
+
+    <style>
+
+        body {
+
+            font-family:
+                Arial,
+                sans-serif;
+
+            max-width: 600px;
+
+            margin: 40px auto;
+
+            padding: 20px;
+
+        }
+
+
+        input {
+
+            width: 250px;
+
+            padding: 8px;
+
+            margin: 5px 0;
+
+        }
+
+
+        button {
+
+            padding: 8px 15px;
+
+            margin: 5px;
+
+            cursor: pointer;
+
+        }
+
+
+        .box {
+
+            border: 1px solid #ccc;
+
+            padding: 20px;
+
+            margin-bottom: 20px;
+
+        }
+
+
+        .post {
+
+            border: 1px solid #999;
+
+            padding: 20px;
+
+            margin-top: 20px;
+
+        }
+
+
+        #likeButton {
+
+            font-size: 18px;
+
+        }
+
+
+        .message {
+
+            margin-top: 10px;
+
+            font-weight: bold;
+
+        }
+
+    </style>
 
 </head>
 
+
 <body>
 
-<h1>Testing Like</h1>
+
+<h1>
+    REST API Like Test
+</h1>
 
 
-<!-- ==========================
+<!-- =================================
+     Register
+================================== -->
+
+<div class="box">
+
+    <h2>
+        Register
+    </h2>
+
+
+    <input
+        type="text"
+        id="registerName"
+        placeholder="Name"
+    >
+
+    <br>
+
+
+    <input
+        type="text"
+        id="registerUsername"
+        placeholder="Username"
+    >
+
+    <br>
+
+
+    <input
+        type="password"
+        id="registerPassword"
+        placeholder="Password"
+    >
+
+    <br>
+
+
+    <button id="registerButton">
+
+        Register
+
+    </button>
+
+
+    <div
+        id="registerMessage"
+        class="message"
+    ></div>
+
+</div>
+
+
+<!-- =================================
      Login
-=========================== -->
+================================== -->
 
-<h3>User login</h3>
+<div class="box">
 
-<select id="userSelect">
-
-    <option value="1">
-        Tom
-    </option>
-
-    <option value="2">
-        Jane
-    </option>
-
-    <option value="3">
-        Michael
-    </option>
-
-</select>
+    <h2>
+        Login
+    </h2>
 
 
-<button id="loginButton">
-    Login
-</button>
+    <input
+        type="text"
+        id="loginUsername"
+        placeholder="Username"
+    >
+
+    <br>
 
 
-<p>
+    <input
+        type="password"
+        id="loginPassword"
+        placeholder="Password"
+    >
 
-Current User:
-
-<strong id="currentUser">
-Not logged in
-</strong>
-
-</p>
+    <br>
 
 
-<hr>
+    <button id="loginButton">
+
+        Login
+
+    </button>
 
 
-<!-- ==========================
-     Post
-=========================== -->
+    <button id="logoutButton">
 
-<h2>I like Pizza 🍕</h2>
+        Logout
 
-
-<button id="likeButton" disabled>
-
-    👍 Like
-
-</button>
+    </button>
 
 
-<span>
+    <p>
 
-Like
+        Current User:
 
-<strong id="likeCount">
-0
-</strong>
+        <strong id="currentUser">
 
-</span>
+            Not logged in
+
+        </strong>
+
+    </p>
+
+
+    <div
+        id="loginMessage"
+        class="message"
+    ></div>
+
+</div>
+
+
+<!-- =================================
+     Posts
+================================== -->
+
+<div class="post">
+
+    <h2 id="postTitle">
+
+        Delicious Pizza 🍕
+
+    </h2>
+
+
+    <button
+        id="likeButton"
+        disabled
+    >
+
+        👍 Like
+
+    </button>
+
+
+    <span>
+
+        Like
+
+        <strong id="likeCount">
+
+            0
+
+        </strong>
+
+    </span>
+
+</div>
 
 
 <script>
 
 
-// Current user ID
-
-let currentUserId = null;
-
-
-// Current post like status
-
-let liked = false;
-
-
-// Post ID
+// ======================================
+// Basic settings
+// ======================================
 
 const postId = 1;
 
 
-// =====================================
-// Login
-// =====================================
+// Whether the current user has liked the post
 
-async function login() {
+let liked = false;
 
-    const userId =
-        Number(
-            document.getElementById(
-                "userSelect"
-            ).value
+
+// ======================================
+// Register
+// ======================================
+
+async function register() {
+
+    const name =
+        document.getElementById(
+            "registerName"
+        ).value.trim();
+
+
+    const username =
+        document.getElementById(
+            "registerUsername"
+        ).value.trim();
+
+
+    const password =
+        document.getElementById(
+            "registerPassword"
+        ).value;
+
+
+    const message =
+        document.getElementById(
+            "registerMessage"
         );
 
 
+    // Confirm input
+
+    if (
+        !name ||
+        !username ||
+        !password
+    ) {
+
+        message.textContent =
+            "Please fill in all fields.";
+
+        return;
+
+    }
+
+
+    // Request server for registration
+
     const response =
         await fetch(
-            "/api/login",
+            "/api/register",
             {
 
                 method: "POST",
 
                 headers: {
+
                     "Content-Type":
                         "application/json"
+
                 },
 
                 body: JSON.stringify({
-                    userId: userId
+
+                    name: name,
+
+                    username: username,
+
+                    password: password
+
                 })
 
             }
@@ -138,37 +350,96 @@ async function login() {
         await response.json();
 
 
-    currentUserId =
-        data.userId;
+    message.textContent =
+        data.message;
 
 
-    document.getElementById(
-        "currentUser"
-    ).textContent =
-        data.name;
+    // If registration is successful
+    // Clear the input fields
+
+    if (response.ok) {
+
+        document.getElementById(
+            "registerName"
+        ).value = "";
 
 
-    document.getElementById(
-        "likeButton"
-    ).disabled = false;
+        document.getElementById(
+            "registerUsername"
+        ).value = "";
 
 
-    // User logged in, load post info
+        document.getElementById(
+            "registerPassword"
+        ).value = "";
 
-    loadPost();
+    }
 
 }
 
 
-// =====================================
-// Get post info
-// =====================================
+// ======================================
+// Login
+// ======================================
 
-async function loadPost() {
+async function login() {
+
+    const username =
+        document.getElementById(
+            "loginUsername"
+        ).value.trim();
+
+
+    const password =
+        document.getElementById(
+            "loginPassword"
+        ).value;
+
+
+    const message =
+        document.getElementById(
+            "loginMessage"
+        );
+
+
+    if (
+        !username ||
+        !password
+    ) {
+
+        message.textContent =
+            "Please enter your username and password.";
+
+        return;
+
+    }
+
+
+    // Request login
 
     const response =
         await fetch(
-            `/api/posts/${postId}?userId=${currentUserId}`
+            "/api/login",
+            {
+
+                method: "POST",
+
+                headers: {
+
+                    "Content-Type":
+                        "application/json"
+
+                },
+
+                body: JSON.stringify({
+
+                    username: username,
+
+                    password: password
+
+                })
+
+            }
         );
 
 
@@ -176,9 +447,164 @@ async function loadPost() {
         await response.json();
 
 
-    liked =
-        data.liked;
+    if (!response.ok) {
 
+        message.textContent =
+            data.message;
+
+        return;
+
+    }
+
+
+    message.textContent =
+        "Login successful!";
+
+
+    // Show current user
+
+    document.getElementById(
+        "currentUser"
+    ).textContent =
+        data.name;
+
+
+    // Enable like button
+
+    document.getElementById(
+        "likeButton"
+    ).disabled = false;
+
+
+    // Reload post information
+
+    loadPost();
+
+}
+
+
+// ======================================
+// Logout
+// ======================================
+
+async function logout() {
+
+    const response =
+        await fetch(
+            "/api/logout",
+            {
+
+                method: "POST"
+
+            }
+        );
+
+
+    const data =
+        await response.json();
+
+
+    document.getElementById(
+        "currentUser"
+    ).textContent =
+        "Not logged in";
+
+
+    document.getElementById(
+        "likeButton"
+    ).disabled = true;
+
+
+    document.getElementById(
+        "loginMessage"
+    ).textContent =
+        data.message;
+
+
+    liked = false;
+
+
+    updateLikeButton();
+
+
+    // Reload post information
+
+    loadPost();
+
+}
+
+
+// ======================================
+// Check Current Login User
+// ======================================
+
+async function checkLogin() {
+
+    const response =
+        await fetch(
+            "/api/me"
+        );
+
+
+    if (!response.ok) {
+
+        return;
+
+    }
+
+
+    const user =
+        await response.json();
+
+
+    document.getElementById(
+        "currentUser"
+    ).textContent =
+        user.name;
+
+
+    document.getElementById(
+        "likeButton"
+    ).disabled = false;
+
+
+    loadPost();
+
+}
+
+
+// ======================================
+// Load Post Information
+// ======================================
+
+async function loadPost() {
+
+    const response =
+        await fetch(
+            `/api/posts/${postId}`
+        );
+
+
+    if (!response.ok) {
+
+        return;
+
+    }
+
+
+    const data =
+        await response.json();
+
+
+    // Load post title
+
+    document.getElementById(
+        "postTitle"
+    ).textContent =
+        data.title;
+
+
+    // Load like count
 
     document.getElementById(
         "likeCount"
@@ -186,30 +612,29 @@ async function loadPost() {
         data.likeCount;
 
 
-    updateButton();
+    // Whether the current user has liked the post
+
+    liked =
+        data.liked;
+
+
+    updateLikeButton();
 
 }
 
 
-// =====================================
-// Like button
-// =====================================
+// ======================================
+// Toggle Like / Unlike
+// ======================================
 
 async function toggleLike() {
-
-    if (!currentUserId) {
-
-        alert("Login first.");
-
-        return;
-
-    }
-
 
     let response;
 
 
-    // Cancel like
+    // If already liked
+    // DELETE
+
     if (liked) {
 
         response =
@@ -217,19 +642,7 @@ async function toggleLike() {
                 `/api/posts/${postId}/like`,
                 {
 
-                    method: "DELETE",
-
-                    headers: {
-                        "Content-Type":
-                            "application/json"
-                    },
-
-                    body: JSON.stringify({
-
-                        userId:
-                            currentUserId
-
-                    })
+                    method: "DELETE"
 
                 }
             );
@@ -237,7 +650,9 @@ async function toggleLike() {
     }
 
 
-    // Like
+    // If not liked
+    // POST
+
     else {
 
         response =
@@ -245,19 +660,7 @@ async function toggleLike() {
                 `/api/posts/${postId}/like`,
                 {
 
-                    method: "POST",
-
-                    headers: {
-                        "Content-Type":
-                            "application/json"
-                    },
-
-                    body: JSON.stringify({
-
-                        userId:
-                            currentUserId
-
-                    })
+                    method: "POST"
 
                 }
             );
@@ -278,9 +681,13 @@ async function toggleLike() {
     }
 
 
+    // Change like status
+
     liked =
         data.liked;
 
+
+    // Change like count
 
     document.getElementById(
         "likeCount"
@@ -288,61 +695,94 @@ async function toggleLike() {
         data.likeCount;
 
 
-    updateButton();
+    updateLikeButton();
 
 }
 
 
-// =====================================
-// Update Like button text
-// =====================================
+// ======================================
+// Update Like Button Display
+// ======================================
 
-function updateButton() {
+function updateLikeButton() {
 
     const button =
         document.getElementById(
-            "like Button"
+            "likeButton"
         );
 
 
     if (liked) {
 
         button.textContent =
-            "❤️ Like Cancel";
+            "❤️ 좋아요 취소";
 
     }
 
     else {
 
         button.textContent =
-            "👍 Like";
+            "👍 좋아요";
 
     }
 
 }
 
 
-// =====================================
-// Event listeners
-// =====================================
+// ======================================
+// Event Binding
+// ======================================
 
-document.getElementById(
-    "loginButton"
-).addEventListener(
-    "click",
-    login
-);
+document
+    .getElementById(
+        "registerButton"
+    )
+    .addEventListener(
+        "click",
+        register
+    );
 
 
-document.getElementById(
-    "likeButton"
-).addEventListener(
-    "click",
-    toggleLike
-);
+document
+    .getElementById(
+        "loginButton"
+    )
+    .addEventListener(
+        "click",
+        login
+    );
+
+
+document
+    .getElementById(
+        "logoutButton"
+    )
+    .addEventListener(
+        "click",
+        logout
+    );
+
+
+document
+    .getElementById(
+        "likeButton"
+    )
+    .addEventListener(
+        "click",
+        toggleLike
+    );
+
+
+// ======================================
+// Page Load Event
+// Check if the user is already logged in
+// ======================================
+
+checkLogin();
 
 </script>
 
+
 </body>
 
-</html>`
+</html>
