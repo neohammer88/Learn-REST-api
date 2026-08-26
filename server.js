@@ -16,7 +16,7 @@ const db = new Database("likes.db");
 
 
 // ======================================
-// users 테이블
+// users table
 // ======================================
 
 db.prepare(`
@@ -28,7 +28,7 @@ db.prepare(`
 
 
 // ======================================
-// posts 테이블
+// posts table
 // ======================================
 
 db.prepare(`
@@ -40,7 +40,7 @@ db.prepare(`
 
 
 // ======================================
-// likes 테이블
+// likes table
 // ======================================
 
 db.prepare(`
@@ -63,7 +63,7 @@ db.prepare(`
 
 
 // ======================================
-// 테스트 사용자 생성
+// Create test users
 // ======================================
 
 const userCount = db
@@ -75,22 +75,22 @@ if (userCount.count === 0) {
     db.prepare(`
         INSERT INTO users (name)
         VALUES (?)
-    `).run("홍길동");
+    `).run("Tom");
 
     db.prepare(`
         INSERT INTO users (name)
         VALUES (?)
-    `).run("김철수");
+    `).run("Jane");
 
     db.prepare(`
         INSERT INTO users (name)
         VALUES (?)
-    `).run("이영희");
+    `).run("Michael");
 }
 
 
 // ======================================
-// 테스트 게시물 생성
+// Create test post
 // ======================================
 
 const postCount = db
@@ -102,12 +102,12 @@ if (postCount.count === 0) {
     db.prepare(`
         INSERT INTO posts (title)
         VALUES (?)
-    `).run("맛있는 피자");
+    `).run("I like Pizza");
 }
 
 
 // ======================================
-// HTML 제공
+// HTML 
 // ======================================
 
 app.use(
@@ -118,7 +118,7 @@ app.use(
 
 
 // ======================================
-// 사용자 목록
+// User list
 // ======================================
 
 app.get("/api/users", (req, res) => {
@@ -136,7 +136,7 @@ app.get("/api/users", (req, res) => {
 
 
 // ======================================
-// 로그인
+// Login
 // ======================================
 
 app.post("/api/login", (req, res) => {
@@ -155,14 +155,13 @@ app.post("/api/login", (req, res) => {
     if (!user) {
 
         return res.status(404).json({
-            message: "사용자를 찾을 수 없습니다."
+            message: "User not found."
         });
 
     }
 
 
-    // 실제 서비스에서는
-    // 여기에서 Session 또는 JWT 등을 사용합니다.
+    // Use Session or JWT in a real application for authentication and authorization.
 
     res.json({
         userId: user.id,
@@ -173,7 +172,7 @@ app.post("/api/login", (req, res) => {
 
 
 // ======================================
-// 좋아요 개수 + 현재 사용자의 좋아요 여부
+// Number of likes and whether the user has liked the post
 // ======================================
 
 app.get(
@@ -200,7 +199,7 @@ app.get(
         if (!post) {
 
             return res.status(404).json({
-                message: "게시물이 없습니다."
+                message: "Post not found."
             });
 
         }
@@ -216,7 +215,7 @@ app.get(
             .get(postId);
 
 
-        // 현재 사용자가 좋아요를 눌렀는지
+        // if user press like button
         const userLike = db
             .prepare(`
                 SELECT id
@@ -244,7 +243,7 @@ app.get(
 
 
 // ======================================
-// 좋아요
+// Like
 // ======================================
 
 app.post(
@@ -278,7 +277,7 @@ app.post(
 
                 return res.status(400).json({
                     message:
-                        "이미 좋아요를 눌렀습니다."
+                        "You have already liked this post."
                 });
 
             }
@@ -309,7 +308,7 @@ app.post(
 
 
 // ======================================
-// 좋아요 취소
+// Like and Cancel
 // ======================================
 
 app.delete(
@@ -354,7 +353,7 @@ app.delete(
 
 
 // ======================================
-// 서버 실행
+// Run server
 // ======================================
 
 app.listen(PORT, () => {

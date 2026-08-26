@@ -6,49 +6,49 @@
 
     <meta charset="UTF-8">
 
-    <title>REST API 좋아요</title>
+    <title>REST API project1</title>
 
 </head>
 
 <body>
 
-<h1>REST API 좋아요 테스트</h1>
+<h1>Testing Like</h1>
 
 
 <!-- ==========================
-     로그인
+     Login
 =========================== -->
 
-<h3>사용자 로그인</h3>
+<h3>User login</h3>
 
 <select id="userSelect">
 
     <option value="1">
-        홍길동
+        Tom
     </option>
 
     <option value="2">
-        김철수
+        Jane
     </option>
 
     <option value="3">
-        이영희
+        Michael
     </option>
 
 </select>
 
 
 <button id="loginButton">
-    로그인
+    Login
 </button>
 
 
 <p>
 
-현재 사용자:
+Current User:
 
 <strong id="currentUser">
-로그인하지 않음
+Not logged in
 </strong>
 
 </p>
@@ -58,22 +58,22 @@
 
 
 <!-- ==========================
-     게시물
+     Post
 =========================== -->
 
-<h2>맛있는 피자 🍕</h2>
+<h2>I like Pizza 🍕</h2>
 
 
 <button id="likeButton" disabled>
 
-    👍 좋아요
+    👍 Like
 
 </button>
 
 
 <span>
 
-좋아요
+Like
 
 <strong id="likeCount">
 0
@@ -85,23 +85,23 @@
 <script>
 
 
-// 현재 로그인한 사용자
+// Current user ID
 
 let currentUserId = null;
 
 
-// 현재 사용자가 좋아요했는지
+// Current post like status
 
 let liked = false;
 
 
-// 게시물 ID
+// Post ID
 
 const postId = 1;
 
 
 // =====================================
-// 로그인
+// Login
 // =====================================
 
 async function login() {
@@ -153,8 +153,7 @@ async function login() {
     ).disabled = false;
 
 
-    // 로그인한 사용자의
-    // 좋아요 상태 확인
+    // User logged in, load post info
 
     loadPost();
 
@@ -162,7 +161,7 @@ async function login() {
 
 
 // =====================================
-// 게시물 정보 가져오기
+// Get post info
 // =====================================
 
 async function loadPost() {
@@ -193,14 +192,14 @@ async function loadPost() {
 
 
 // =====================================
-// 좋아요 버튼
+// Like button
 // =====================================
 
 async function toggleLike() {
 
     if (!currentUserId) {
 
-        alert("먼저 로그인하세요.");
+        alert("Login first.");
 
         return;
 
@@ -210,7 +209,7 @@ async function toggleLike() {
     let response;
 
 
-    // 좋아요 취소
+    // Cancel like
     if (liked) {
 
         response =
@@ -238,7 +237,7 @@ async function toggleLike() {
     }
 
 
-    // 좋아요
+    // Like
     else {
 
         response =
@@ -295,28 +294,28 @@ async function toggleLike() {
 
 
 // =====================================
-// 버튼 글자 변경
+// Update Like button text
 // =====================================
 
 function updateButton() {
 
     const button =
         document.getElementById(
-            "likeButton"
+            "like Button"
         );
 
 
     if (liked) {
 
         button.textContent =
-            "❤️ 좋아요 취소";
+            "❤️ Like Cancel";
 
     }
 
     else {
 
         button.textContent =
-            "👍 좋아요";
+            "👍 Like";
 
     }
 
@@ -324,7 +323,7 @@ function updateButton() {
 
 
 // =====================================
-// 이벤트
+// Event listeners
 // =====================================
 
 document.getElementById(
@@ -346,4 +345,4 @@ document.getElementById(
 
 </body>
 
-</html>
+</html>`
