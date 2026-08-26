@@ -3,3 +3,5 @@ REST API
 
 #To install pakages :
 npm install express better-sqlite3 express-session
+
+npm install bcryptjs
