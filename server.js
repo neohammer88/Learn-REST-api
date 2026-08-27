@@ -136,7 +136,7 @@ if (postCount.count === 0) {
         INSERT INTO posts (title)
         VALUES (?)
     `)
-    .run("맛있는 피자");
+    .run("Delicious Pizza");
 
 }
 
