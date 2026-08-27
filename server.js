@@ -28,7 +28,7 @@ const db = new Database("likes.db");
 app.use(express.json());
 
 
-// Session 설정
+// Session settings
 app.use(
     session({
 
@@ -167,7 +167,7 @@ app.post(
             return res.status(400).json({
 
                 message:
-                    "이름, 아이디, 비밀번호를 모두 입력하세요."
+                    "Input Name, username, password."
 
             });
 
@@ -190,7 +190,7 @@ app.post(
             return res.status(400).json({
 
                 message:
-                    "이미 사용 중인 아이디입니다."
+                    "Already in use username."
 
             });
 
@@ -260,7 +260,7 @@ app.post(
             return res.status(400).json({
 
                 message:
-                    "아이디와 비밀번호를 입력하세요."
+                    "Input username and password."
 
             });
 
@@ -689,7 +689,7 @@ app.delete(
             return res.status(401).json({
 
                 message:
-                    "좋아요를 취소하려면 로그인해야 합니다."
+                    "Please login first."
 
             });
 
